@@ -1,0 +1,29 @@
+# Environments & Secrets (절대 커밋 금지)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Terraform 보안 (인프라 상태 파일에는 평문 비밀번호가 포함됨)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!terraform.tfvars.example
+
+# Dependencies & Build Outputs
+node_modules/
+dist/
+build/
+target/
+.gradle/
+
+# IDE & OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.log

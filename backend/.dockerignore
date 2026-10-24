@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.env.*
+*.pem
+*.key
+node_modules
+dist
+build
+target
+.gradle
+npm-debug.log*
+README.md
+Dockerfile*
+docker-compose*
+.idea
