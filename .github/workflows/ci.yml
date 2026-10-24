@@ -1,0 +1,36 @@
+# 워크 플로우 이름(GitHub 웹의 Actions 탭에 표시될 제목)
+name: CI Security & Build Pipeline
+
+# 1. Trigger(언제 파이프라인을 동작 시킬것인지!)
+on:
+  push:
+    branches:     # 해당 브렌치에 직접 push 될때
+      - main
+  pull_request:   # main으로 합치려고 PR 열였을 경우
+    branches:
+      - main
+
+# 2. 권한 제어(GITHUB_TOKEN 권한 '읽기 전용'으로 강제)
+permissions:
+  contents: read
+
+# 3. 실행 작업 목록
+jobs:
+  # ID(내가 고름)
+  inspect-runner:
+    # GitHub 제공하는 Ubuntu LTS 일회용 가상 머신 할당 요청(개발 환경과 동일하게 설정)
+    runs-on: ubuntu-latest
+
+    # 가상머신 안에서 순서대로 실행할 Step 설정
+    steps:
+      # Step1: git clone 역할
+      - name: Checkout Source Code
+        uses: actions/checkout@v4   #uses: GitHub 공식팀이 짜놓은 스크립트 사용
+      # Step2: 가상 머신 정보 + 코드 잘 받았는지 확인
+      - name: Check Runner Environment
+        run: |
+          echo "현재 실행 중 가상머신의 사용자: $(whoami)"
+          echo "가상머신 OS 정보: $(uname -a)"
+          echo "내려받은 프로젝트 폴더 목록:"
+          ls -la
+

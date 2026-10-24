@@ -27,3 +27,6 @@ target/
 .vscode/
 .DS_Store
 *.log
+
+# 개념 문서
+.note/
