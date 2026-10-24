@@ -25,12 +25,40 @@ jobs:
     steps:
       # Step1: git clone 역할
       - name: Checkout Source Code
+        # 불변 커밋 해시 uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         uses: actions/checkout@v4   #uses: GitHub 공식팀이 짜놓은 스크립트 사용
-      # Step2: 가상 머신 정보 + 코드 잘 받았는지 확인
-      - name: Check Runner Environment
+      # .nvmrc read + node 구성환경 통일화 + 모노레포 캐시 활성화
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          # 백엔드+프론트엔드 두 lock 파일 추척 + cache key 생성 => 비교군
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      # 백엔드 의존성 무결성 설치(npm ci) + 타입스크립트 컴파일 및 유닛 테스트
+      - name: Backend - Install,Build, Test
+        working-directory: ./backend
         run: |
-          echo "현재 실행 중 가상머신의 사용자: $(whoami)"
-          echo "가상머신 OS 정보: $(uname -a)"
-          echo "내려받은 프로젝트 폴더 목록:"
-          ls -la
+          echo "🔒 Installing backend dependencies strictly from lockfile..."
+          npm ci
+          echo "🔨 Compiling TypeScript to JavaScript..."
+          npm run build
+          echo "Running unit tests..."
+          npm test
+      - name: Frontend - Install,Build, Check
+        working-directory: ./frontend
+        run: |
+          echo "🔒 Installing frontend dependencies strictly from lockfile..."
+          npm ci
+          echo "📦 Building production static assets..."
+          npm run build
+      # Step2: 가상 머신 정보 + 코드 잘 받았는지 확인
+#      - name: Check Runner Environment
+#        run: |
+#          echo "현재 실행 중 가상머신의 사용자: $(whoami)"
+#          echo "가상머신 OS 정보: $(uname -a)"
+#          echo "내려받은 프로젝트 폴더 목록:"
+#          ls -la
 
