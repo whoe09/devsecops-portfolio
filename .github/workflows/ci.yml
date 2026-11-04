@@ -104,7 +104,7 @@ jobs:
     # CI (build-and-test) 선행되어야함
     needs: build-and-test
     # Push 일때만 실행
-    if: github.ref == 'refs/heads/main' && github.event_name = 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     # 해당 job OIDC 전자여권(id-token) 발급권한 부여
     permissions:
