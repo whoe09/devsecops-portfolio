@@ -9,15 +9,22 @@ on:
   pull_request:   # main으로 합치려고 PR 열였을 경우
     branches:
       - main
-
 # 2. 권한 제어(GITHUB_TOKEN 권한 '읽기 전용'으로 강제)
 permissions:
   contents: read
 
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_BACKEND_REPO: portfolio-backend
+  ECR_FRONTEND_REPO: portfolio-frontend
+
 # 3. 실행 작업 목록
 jobs:
   # ID(내가 고름)
-  inspect-runner:
+  # ========================================
+  # CI (누구나 실행 가능하지만 AWS 권한 없음)
+  # =========================================
+  build-and-test:
     # GitHub 제공하는 Ubuntu LTS 일회용 가상 머신 할당 요청(개발 환경과 동일하게 설정)
     runs-on: ubuntu-latest
 
@@ -59,7 +66,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       # 백엔드 멀티스테이지 Dockerfile 빌드 검증 및 레이어 캐싱
-      - name: Verify Backend Docker Image Build
+      - name: Verify Backend Docker Image Build (CI Verification)
         uses: docker/build-push-action@v6
         with:
           context: ./backend
@@ -71,7 +78,7 @@ jobs:
           cache-from: type=gha, scope=backend
           cache-to: type=gha, mode=max,scope=backend
       # 프론트엔드 멀티스테이지 Dockerfile 빌드 및 레이어 캐싱
-      - name: Verify Frontend Docker Image Build
+      - name: Verify Frontend Docker Image Build (CI Verification)
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
@@ -92,6 +99,49 @@ jobs:
           docker inspect --format='Frontend Image User: {{.Config.User}}' portfolio-frontend:${{ github.sha }}
 
       # Step2: 가상 머신 정보 + 코드 잘 받았는지 확인
+  # CD (CI 성공 -> main 브랜치에 push된 경우만 실행)
+  deploy-to-ecr:
+    # CI (build-and-test) 선행되어야함
+    needs: build-and-test
+    # Push 일때만 실행
+    if: github.ref == 'refs/heads/main' && github.event_name = 'push'
+    runs-on: ubuntu-latest
+    # 해당 job OIDC 전자여권(id-token) 발급권한 부여
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+      # OIDC 여권을 AWS STS에 제시 + 임시 출입증 받음
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-Credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION  }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      # Job1 작업 완료 후 cache-from 그대로 가져와서 backend 이미지 ECR로 push
+      - name: Push Backend Image to ECR
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          # IMMUTABLE 설정 => lastest 옵션 없이 고유 커밋 해시(github.sha)만 태그로 지정
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+      - name: PUsh Frontend Image to ECR
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ github.sha }}
+          cache-from: type=gha,scope=frontend
 #      - name: Check Runner Environment
 #        run: |
 #          echo "현재 실행 중 가상머신의 사용자: $(whoami)"
