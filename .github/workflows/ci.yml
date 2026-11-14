@@ -98,8 +98,9 @@ jobs:
           echo "🔒 프론트엔드 이미지의 기본 실행 유저(User) 메타데이터 검증:"
           docker inspect --format='Frontend Image User: {{.Config.User}}' portfolio-frontend:${{ github.sha }}
 
-      # Step2: 가상 머신 정보 + 코드 잘 받았는지 확인
-  # CD (CI 성공 -> main 브랜치에 push된 경우만 실행)
+  # ==========================================================
+  # Job 2: CD (CI가 성공하고, main 브랜치에 push된 경우에만 실행!)
+  # ==========================================================
   deploy-to-ecr:
     # CI (build-and-test) 선행되어야함
     needs: build-and-test
@@ -113,12 +114,28 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+      # ===
+      # 디버깅
+      # ===
+      - name: Debug OIDC Token Claims
+        run: |
+          echo "🔍 1. GitHub Context 확인:"
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
+
+          echo "🔍 2. 실제 발급된 OIDC JWT 토큰의 Payload(내용물) 디코딩:"
+          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+          echo "$TOKEN" | cut -d '.' -f2 | base64 -d 2>/dev/null | jq '{iss, aud, sub, repository, ref}'
       # OIDC 여권을 AWS STS에 제시 + 임시 출입증 받음
+      # 4. OIDC 여권을 AWS STS에 제시하고 1시간짜리 임시 출입증을 발급받음 (Access Key 없음!)
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION  }}
+
+      # 5. 발급받은 임시 출입증으로 Amazon ECR 사설 창고에 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
