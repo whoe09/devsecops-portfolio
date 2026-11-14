@@ -115,7 +115,7 @@ jobs:
         uses: actions/checkout@v4
       # OIDC 여권을 AWS STS에 제시 + 임시 출입증 받음
       - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-Credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION  }}
