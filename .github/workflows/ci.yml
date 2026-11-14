@@ -117,16 +117,16 @@ jobs:
       # ===
       # 디버깅
       # ===
-      - name: Debug OIDC Token Claims
-        run: |
-          echo "🔍 1. GitHub Context 확인:"
-          echo "Repository: ${{ github.repository }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Event: ${{ github.event_name }}"
-
-          echo "🔍 2. 실제 발급된 OIDC JWT 토큰의 Payload(내용물) 디코딩:"
-          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
-          echo "$TOKEN" | cut -d '.' -f2 | base64 -d 2>/dev/null | jq '{iss, aud, sub, repository, ref}'
+#      - name: Debug OIDC Token Claims
+#        run: |
+#          echo "🔍 1. GitHub Context 확인:"
+#          echo "Repository: ${{ github.repository }}"
+#          echo "Ref: ${{ github.ref }}"
+#          echo "Event: ${{ github.event_name }}"
+#
+#          echo "🔍 2. 실제 발급된 OIDC JWT 토큰의 Payload(내용물) 디코딩:"
+#          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+#          echo "$TOKEN" | cut -d '.' -f2 | base64 -d 2>/dev/null | jq '{iss, aud, sub, repository, ref}'
       # OIDC 여권을 AWS STS에 제시 + 임시 출입증 받음
       # 4. OIDC 여권을 AWS STS에 제시하고 1시간짜리 임시 출입증을 발급받음 (Access Key 없음!)
       - name: Configure AWS Credentials via OIDC
