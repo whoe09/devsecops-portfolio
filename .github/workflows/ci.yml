@@ -20,11 +20,27 @@ env:
 
 # 3. 실행 작업 목록
 jobs:
-  # ID(내가 고름)
-  # ========================================
+  # =======================================
+  # Job 0: 최전방 보안 게이트 (Shift-Left Security)
+  # =======================================
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth:0 => 과거 커밋에 숨겨진 시크릿까지 모두 잡음
+      - name: Checkout Full Git History
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Gitleaks 실행 => 코드 및 전체 git 커밋 히스토리 내 시크릿 유출 검사
+      - name: Run Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # =======================================
   # CI (누구나 실행 가능하지만 AWS 권한 없음)
-  # =========================================
+  # =======================================
   build-and-test:
+    needs: security-audit
     # GitHub 제공하는 Ubuntu LTS 일회용 가상 머신 할당 요청(개발 환경과 동일하게 설정)
     runs-on: ubuntu-latest
 
