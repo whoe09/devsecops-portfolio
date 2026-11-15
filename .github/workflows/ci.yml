@@ -113,6 +113,31 @@ jobs:
           docker inspect --format='Backend Image User: {{.Config.User}}' portfolio-backend:${{ github.sha }}
           echo "🔒 프론트엔드 이미지의 기본 실행 유저(User) 메타데이터 검증:"
           docker inspect --format='Frontend Image User: {{.Config.User}}' portfolio-frontend:${{ github.sha }}
+      # ==============
+      # ECR 배포 전 컨테이너 이미지 취약점 정밀 스캔(Trivy)
+      # ==============
+      - name: Scan Backend Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'portfolio-backend:${{ github.sha }}'
+          format: 'table'
+          # CRITICAL,HIGH 타겟팅
+          severity: 'HIGH,CRITICAL'
+          # 패치 버전 존재하는 취약점만 필터링
+          ignore-unfixed: 'true'
+          # 종류선정
+          vuln-type: 'os,library'
+          # 1: 취약점 1개라도 발견시 파이프라인 즉시 실패
+          exit-code: '1'
+      - name: Scan Frontend Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'portfolio-frontend:$ {{ github.sha }}'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: 'true'
+          vuln-type: 'os,library'
+          exit-code: '1'
 
   # ==========================================================
   # Job 2: CD (CI가 성공하고, main 브랜치에 push된 경우에만 실행!)
