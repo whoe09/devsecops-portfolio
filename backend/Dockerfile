@@ -8,7 +8,11 @@ RUN npm run build && npm prune --omit=dev
 FROM node:24-alpine AS runner
 RUN apk update && apk upgrade --no-cache && \
     apk add --no-cache dumb-init curl && \
-    rm -rf /var/cache/apk/*
+    rm -rf /var/cache/apk/* \
+           /usr/local/lib/node_modules \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx \
+           /usr/local/bin/corepack
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
