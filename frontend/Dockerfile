@@ -5,9 +5,12 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.28-alpine AS runner
+FROM nginxinc/nginx-unprivileged:alpine-slim AS runner
 USER root
-RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
+RUN apk update && \
+    apk upgrade --no-cache && \
+    apk add --no-cache --upgrade curl nginx && \
+    rm -rf /var/cache/apk/*
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 USER 101
